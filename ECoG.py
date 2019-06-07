@@ -21,7 +21,7 @@ def read_ECoG_from_csv(signal_file_path, motion_file_path):
 
 class ECoG(object):
     def __init__(self,signal_data,motion_data,downsample = True):
-        start = max(signal_data[1,0],motion_data[1,0])
+        '''start = max(signal_data[1,0],motion_data[1,0])
         end = min(signal_data[-1,0],motion_data[-1,0])
         #cutting signal and motion, only overlapping time left
         signal_data = signal_data[:,:][(signal_data[:,0]>=start)]
@@ -34,17 +34,22 @@ class ECoG(object):
         for i in range(1,motion_data.shape[1]):
             interpol = interp1d(motion_data[:,0],motion_data[:,i],kind="cubic")
             x = interpol(signal_data[:,0])
-            M.append(x)
+            M.append(x)'''
+        time, signal_idx, motion_idx = np.intersect1d(signal_data[:, 0], motion_data[:, 0], assume_unique=True,
+                                                      return_indices=True)
+        self.signal = signal_data[signal_idx]
+        self.motion = motion_data[motion_idx]
+        self.time = time
         #downsampling in 10 times to get faster calcultions
         self.downsample = downsample
-        if downsample:
+        '''if downsample:
             self.signal = signal_data[::10,1:]
             self.motion = np.array(M).T[::10,:]
             self.time = signal_data[::10,0]
         else:
             self.signal = signal_data[:,1:]
             self.motion = np.array(M).T[:,:]
-            self.time = signal_data[:,0]
+            self.time = signal_data[:,0]'''
             
     #signal filtering (not sure that it works correctly)
     def bandpass_filter(self, lowcut, highcut,inplace = False, fs = 100, order=7):
@@ -61,8 +66,6 @@ class ECoG(object):
     def scalo(self, window, freqs,start,end, step = 100): #window in sec,freqs in Hz, step in ms
         div = 1
         X = self.signal[start:end,:]
-        if self.downsample:
-            div = 10
         window_len = int(((window * 1000 // step) + 2) * step//div)
         scalo = np.empty((X.shape[0]-window_len,X.shape[1],freqs.shape[0],(window * 1000 // step) + 2))
         for i in range(X.shape[1]):
